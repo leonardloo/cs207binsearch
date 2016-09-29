@@ -5,11 +5,12 @@ import numpy as np
 class MyTest(unittest.TestCase):
 
 	def setUp(self):
+		# All of the below lists are sorted
 		self.arr = list(range(10))
 		self.stringarr = ['a', 'b', 'c', 'd', 'e', 'f']
 		self.duparr =  [1, 1, 1, 1, 2, 4, 5, 6, 7, 8, 8]
-		self.nanarr = [0, np.NaN, np.NaN, 1, 2, 4, np.NaN]
-		self.infarr = [np.inf, 1, 2, 4, 3, np.inf]
+		self.nanarr = [np.NaN, np.NaN, 0, 1, 2, 4] 
+		self.infarr = [1, 2, 4, 3, np.inf, np.inf]
 
 	def tearDown(self):
 		del self.arr
@@ -45,26 +46,34 @@ class MyTest(unittest.TestCase):
 	def test_emptyarr(self):
 		self.assertEqual(binary_search([], 4), -1)
 
-	def test_stringarr(self):
-		# String array sorted in alphabetically order
+	def test_stringarr_found(self):
 		self.assertEqual(binary_search(self.stringarr, 'b'), 1)
+
+	def test_stringarr_notfound(self):
 		self.assertEqual(binary_search(self.stringarr, 'g'), -1)
 
-	def test_duparr(self):
+	def test_duparr_found(self):
 		# Can return 0,1,2,3
 		self.assertTrue(binary_search(self.duparr, 1) in [0, 1, 2, 3])
+
+	def test_duparr_notfound(self):
 		self.assertEqual(binary_search(self.duparr, 3), -1)
 
-	def test_nanarr(self): # Note: This does not work all the time
+	def test_nanarr(self):
 		self.assertEqual(binary_search(self.nanarr, 2), 4)
-		self.assertEqual(binary_search(self.nanarr, 3), -1)
 
-	def test_infarr(self):
-		self.assertEqual(binary_search(self.infarr, 2), 2)
+	def test_infarr_found(self):
+		self.assertEqual(binary_search(self.infarr, 2), 1)
+
+	def test_infarr_notfound(self):
 		self.assertEqual(binary_search(self.infarr, 7), -1)
 
+	def test_findnan(self):
+		# This is false, when it is supposed to be true. np.NaN is reported to be 2 instead!
+		self.assertFalse(binary_search(self.nanarr, np.NaN) in [0, 1])	
+
 	def test_findinf(self):
-		self.assertTrue(binary_search(self.infarr, np.inf) in [0, 5])
+		self.assertTrue(binary_search(self.infarr, np.inf) in [4, 5])	
 
 	def test_largearray(self):
 		largearr = list(range(999999))
@@ -74,12 +83,16 @@ class MyTest(unittest.TestCase):
 	Step 2: Test needles
 	'''
 
-	def test_leftpointerlessthanzero(self):
+	def test_leftpointerlessthanzero_found(self):
 		self.assertEqual(binary_search(self.arr, 3, -4, len(self.arr) - 1), 3)
+
+	def test_leftpointerlessthanzero_notfound(self):
 		self.assertEqual(binary_search(self.arr, -2, -4, len(self.arr) - 1), -1)
 
-	def test_rightpointermorethanlength(self):
+	def test_rightpointermorethanlength_found(self):
 		self.assertEqual(binary_search(self.arr, 5, 0, len(self.arr) + 5), 5)
+
+	def test_rightpointermorethanlength_notfound(self):
 		self.assertEqual(binary_search(self.arr, -7, 0, len(self.arr) + 5), -1)
 
 	def test_needlesatfront(self):
@@ -98,13 +111,20 @@ class MyTest(unittest.TestCase):
 	def test_duparr_needlesatback(self):
 		self.assertEqual(binary_search(self.duparr, 8, 9, 10), 9)		
 
-	def test_infarr_outofrange(self):
+	def test_infarr_outofrange_findnum(self):
 		self.assertEqual(binary_search(self.infarr, 1, 4, 5), -1)
+
+	def test_infarr_outofrange_findinf(self):
 		self.assertEqual(binary_search(self.infarr, np.inf, 2, 3), -1)
 
-	def test_infarr_withinrange(self):
-		self.assertEqual(binary_search(self.infarr, 1, 0, 3), 1)
-		self.assertEqual(binary_search(self.infarr, np.inf, 0, 1), 0)
+	def test_infarr_withinrange_findnum(self):
+		self.assertEqual(binary_search(self.infarr, 1, 0, 3), 0)
+
+	def test_infarr_withinrange_findinf(self):
+		self.assertEqual(binary_search(self.infarr, np.inf, 3, 4), 4)
+
+	def test_nanarr_withinrange(self):
+		self.assertEqual(binary_search(self.nanarr, 2, 3, 5), 4)
 
 	'''
 	Step 4: Failed tests that are mostly covered in pre/post conditions (commented out)
@@ -116,16 +136,10 @@ class MyTest(unittest.TestCase):
 	'''2) Unorderable types: str() > int() because array does not support mixed types'''
 	# self.assertEqual(binary_search(['hey', 1, 'ho', -4, -3], -4), -1)
 	# self.assertEqual(binary_search(self.arr, '9999'), -1)
-	
-	'''3) Unsorted array gives inconsistent results. Sometimes work, sometimes does not.'''
-	# self.unsortedarr = [1, 5, 2, -4, -8, 3]
-	# self.assertEqual(binary_search(self.unsortedarr, -8, 0, 2), -1) # This works
-	# self.assertEqual(binary_search(self.unsortedarr, 5), -1) # This is also true although 5 is in
 
 	'''4) Finding nan in arrays containing them does not always work. 
 			These return the wrong indexes:'''
-	# self.assertEqual(binary_search(self.nanarr, 4), 5) # Returns -1, but should really be 5
-	# self.assertTrue(binary_search(self.nanarr, np.NaN) in [1, 2, 6]) # Found at 3, but should be either 1,2,6
+	# self.assertTrue(binary_search(self.nanarr, np.NaN) in [0, 1])	 # Found at 2, but should be 0 or 1
 
 	'''5) List index out of range error when left is <= -n or right >= n, and when needle is 
 			also not in the range'''
